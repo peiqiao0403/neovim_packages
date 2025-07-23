@@ -1,75 +1,67 @@
--- init.lua for TTY-friendly Retro Neovim Setup
-
-vim.opt.termguicolors = false -- disables truecolor for TTY
-vim.opt.number = true
-vim.opt.relativenumber = true
-vim.opt.cursorline = true
-vim.opt.expandtab = true
-vim.opt.shiftwidth = 2
-vim.opt.tabstop = 2
-vim.opt.scrolloff = 4
-vim.opt.wrap = false
-
--- Keymaps
-vim.keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<CR>", { desc = "Find files" })
-vim.keymap.set("n", "<leader>fg", "<cmd>Telescope live_grep<CR>", { desc = "Live grep" })
-vim.keymap.set("n", "<leader>e", "<cmd>NvimTreeToggle<CR>", { desc = "Toggle file explorer" })
-
-vim.opt.rtp:prepend("~/.config/nvim/lazy/lazy.nvim")
+-- Load lazy.nvim plugin manager
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({
+    "git", "clone", "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git", lazypath
+  })
+end
+vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
-  -- Colorscheme: Gruvbox
-  { "ellisonleao/gruvbox.nvim", priority = 1000, config = function()
-      vim.cmd("colorscheme gruvbox")
-    end
-  },
-
-  -- File Explorer
-  { "nvim-tree/nvim-tree.lua", config = function()
-      require("nvim-tree").setup({
-        renderer = {
-          icons = { show = { file = false, folder = false, folder_arrow = false } },
-        },
-        view = {
-          width = 30,
-          side = "left",
-        }
-      })
-    end
-  },
-
-  -- Fuzzy Finder
-  { "nvim-telescope/telescope.nvim", dependencies = { "nvim-lua/plenary.nvim" }, config = function()
-      require("telescope").setup({
-        defaults = {
-          layout_strategy = "vertical",
-          sorting_strategy = "ascending",
-          layout_config = { prompt_position = "top" },
-          winblend = 0,
-        }
-      })
-    end
-  },
-
-  -- Statusline
-  { "nvim-lualine/lualine.nvim", config = function()
-      require("lualine").setup({
-        options = {
-          theme = "gruvbox",
-          icons_enabled = false,
-          section_separators = "",
-          component_separators = "",
-        }
-      })
-    end
-  },
-
-  -- Syntax Highlighting
-  { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate", config = function()
-      require("nvim-treesitter.configs").setup({
-        ensure_installed = { "c", "cpp", "python", "html", "css", "javascript", "lua" },
-        highlight = { enable = true },
-      })
-    end
-  },
+  { "morhetz/gruvbox" },
+  { "tpope/vim-vinegar" },
+  { "junegunn/fzf", build = "./install --bin" },
+  { "junegunn/fzf.vim" },
+  { "neovim/nvim-lspconfig" },
+  { "hrsh7th/nvim-cmp" },
+  { "hrsh7th/cmp-nvim-lsp" },
+  { "hrsh7th/cmp-buffer" },
+  { "itchyny/lightline.vim" },
 })
+
+-- Color and UI
+vim.opt.termguicolors = true
+vim.opt.background = "dark"
+vim.cmd("colorscheme gruvbox")
+
+-- Status line
+vim.g.lightline = { colorscheme = "gruvbox" }
+
+-- Netrw settings (used by vinegar)
+vim.g.netrw_banner = 0
+vim.g.netrw_liststyle = 3
+
+-- fzf mappings
+vim.keymap.set("n", "<C-p>", ":Files<CR>")
+vim.keymap.set("n", "<C-b>", ":Buffers<CR>")
+vim.keymap.set("n", "<leader>rg", ":Rg<CR>")
+
+-- nvim-cmp setup
+local cmp = require("cmp")
+cmp.setup({
+  completion = {
+    completeopt = "menu,menuone,noselect"
+  },
+  formatting = {
+    format = function(_, vim_item)
+      vim_item.kind = "" -- no icons
+      return vim_item
+    end
+  },
+  window = {
+    documentation = cmp.config.disable
+  },
+  sources = {
+    { name = "nvim_lsp" },
+    { name = "buffer" }
+  }
+})
+
+-- LSP servers
+local lspconfig = require("lspconfig")
+lspconfig.clangd.setup({ capabilities = require("cmp_nvim_lsp").default_capabilities() })
+lspconfig.pyright.setup({ capabilities = require("cmp_nvim_lsp").default_capabilities() })
+lspconfig.html.setup({})
+lspconfig.cssls.setup({})
+lspconfig.tsserver.setup({})
