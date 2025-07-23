@@ -1,67 +1,69 @@
--- Load lazy.nvim plugin manager
+-- BASIC SETTINGS
+vim.opt.number = true
+vim.opt.relativenumber = true
+vim.opt.termguicolors = true
+vim.opt.mouse = ""
+vim.opt.background = "dark"
+
+-- LEADER KEY
+vim.g.mapleader = " "
+
+-- LOAD LAZY.NVIM
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system({
-    "git", "clone", "--filter=blob:none",
-    "https://github.com/folke/lazy.nvim.git", lazypath
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    lazypath,
   })
 end
 vim.opt.rtp:prepend(lazypath)
 
+-- PLUGINS
 require("lazy").setup({
-  { "morhetz/gruvbox" },
-  { "tpope/vim-vinegar" },
-  { "junegunn/fzf", build = "./install --bin" },
-  { "junegunn/fzf.vim" },
-  { "neovim/nvim-lspconfig" },
-  { "hrsh7th/nvim-cmp" },
-  { "hrsh7th/cmp-nvim-lsp" },
-  { "hrsh7th/cmp-buffer" },
-  { "itchyny/lightline.vim" },
+  { "morhetz/gruvbox" },                         -- Theme
+  { "tpope/vim-vinegar" },                       -- File explorer
+  { "junegunn/fzf", build = "./install --bin", dir = "~/.fzf" },  -- fzf core
+  { "junegunn/fzf.vim" },                        -- fzf for Vim
+  { "itchyny/lightline.vim" },                   -- Statusline
+  { "hrsh7th/nvim-cmp" },                        -- Completion engine
+  { "hrsh7th/cmp-nvim-lsp" },                    -- LSP source
+  { "hrsh7th/cmp-buffer" },                      -- Buffer source
+  { "hrsh7th/cmp-path" },                        -- Path source
+  { "neovim/nvim-lspconfig" },                   -- LSP configs
 })
 
--- Color and UI
-vim.opt.termguicolors = true
-vim.opt.background = "dark"
+-- THEME
 vim.cmd("colorscheme gruvbox")
 
--- Status line
-vim.g.lightline = { colorscheme = "gruvbox" }
-
--- Netrw settings (used by vinegar)
-vim.g.netrw_banner = 0
-vim.g.netrw_liststyle = 3
-
--- fzf mappings
-vim.keymap.set("n", "<C-p>", ":Files<CR>")
-vim.keymap.set("n", "<C-b>", ":Buffers<CR>")
-vim.keymap.set("n", "<leader>rg", ":Rg<CR>")
-
--- nvim-cmp setup
-local cmp = require("cmp")
-cmp.setup({
-  completion = {
-    completeopt = "menu,menuone,noselect"
-  },
-  formatting = {
-    format = function(_, vim_item)
-      vim_item.kind = "" -- no icons
-      return vim_item
-    end
-  },
-  window = {
-    documentation = cmp.config.disable
-  },
-  sources = {
-    { name = "nvim_lsp" },
-    { name = "buffer" }
+-- LIGHTLINE
+vim.g.lightline = {
+  colorscheme = 'gruvbox',
+  active = {
+    left = { { 'mode', 'paste' }, { 'readonly', 'filename', 'modified' } }
   }
+}
+
+-- COMPLETION (nvim-cmp)
+local cmp = require'cmp'
+cmp.setup({
+  mapping = cmp.mapping.preset.insert({
+    ['<C-Space>'] = cmp.mapping.complete(),
+    ['<CR>'] = cmp.mapping.confirm({ select = true }),
+    ['<Tab>'] = cmp.mapping.select_next_item(),
+    ['<S-Tab>'] = cmp.mapping.select_prev_item(),
+  }),
+  sources = cmp.config.sources({
+    { name = 'nvim_lsp' },
+    { name = 'buffer' },
+    { name = 'path' }
+  })
 })
 
--- LSP servers
-local lspconfig = require("lspconfig")
-lspconfig.clangd.setup({ capabilities = require("cmp_nvim_lsp").default_capabilities() })
-lspconfig.pyright.setup({ capabilities = require("cmp_nvim_lsp").default_capabilities() })
-lspconfig.html.setup({})
-lspconfig.cssls.setup({})
+-- LSP SETUP
+local lspconfig = require('lspconfig')
+lspconfig.clangd.setup({})
+lspconfig.pyright.setup({})
 lspconfig.tsserver.setup({})
